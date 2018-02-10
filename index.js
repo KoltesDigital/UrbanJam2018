@@ -20,6 +20,12 @@ io.on('connection', function(socket) {
 		console.log('message:', msg);
 		socket.broadcast.emit('message', msg);
 	});
+	socket.on('orientation', function (data) {
+		socket.broadcast.emit('orientation', data);
+	});
+	socket.on('acceleration', function (data) {
+		socket.broadcast.emit('acceleration', data);
+	});
 });
 
 http.listen(3000, function() {
