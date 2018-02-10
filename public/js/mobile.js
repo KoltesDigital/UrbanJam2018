@@ -20,5 +20,6 @@ if (window.DeviceMotionEvent) {
 	window.addEventListener('devicemotion', function (event) {
 		var acc = event.acceleration;
 		socket.emit('acceleration', [acc.x,acc.y,acc.z]);
+		console.log(acc);
 	}, true);
 }
