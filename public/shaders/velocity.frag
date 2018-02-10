@@ -9,7 +9,7 @@ void main () {
 	vec3 position = texture2D(positionTexture, vUv).xyz;
 	vec3 velocity = texture2D(velocityTexture, vUv).xyz;
 
-	velocity *= .99;
+	velocity *= .9;
 	vec3 offset = vec3(0);
 
 	vec3 seed = texture2D(seedTexture, vUv).xyz;

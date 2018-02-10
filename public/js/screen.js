@@ -60,7 +60,9 @@ window.onload = function () {
 			}
 		});
 
-		particle = new Particle(scene, renderer);
+		particle = new Particle(renderer);
+		particle.update(elapsed);
+		scene.add(particle);
 
 		document.body.style.cursor = 'none';
 
@@ -95,6 +97,7 @@ window.onload = function () {
 		// cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
 
 		particle.update(elapsed);
+		particle.setTarget([Math.cos(elapsed)*5., 0, Math.sin(elapsed)*5.]);
 
 		renderer.render( scene, camera );
 		frameElapsed = elapsed;
