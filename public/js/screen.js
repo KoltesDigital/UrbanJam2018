@@ -24,6 +24,9 @@ window.onload = function () {
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.25;
 	controls.rotateSpeed = 0.25;
+	var dataDamping = .5;
+	var resetDamping = .01;
+	var dataSpeed = 1.;
 
 	load([
 		// { name:'cursor', url:'images/cursor.png' },
@@ -49,14 +52,14 @@ window.onload = function () {
 			particle.update(elapsed);
 			scene.add(particle);
 
-			var target = [0, 0, 0];
-			var rotation = [0, 0, 0];
-
 			var client = {
 				cube: cube,
 				particle: particle,
-				target: target,
-				rotation: rotation,
+				accelerationRaw: [0,0,0],
+				orientationRaw: [0,0,0],
+				acceleration: [0,0,0],
+				orientation: [0,0,0],
+				position: [0,0,0],
 			};
 			clients[id] = client;
 		});
@@ -78,7 +81,7 @@ window.onload = function () {
 			if (!client) return;
 
 			for (var v = 0; v < 3; ++v) {
-				client.target[v] = data[v];
+				client.accelerationRaw[v] = data[v];
 			}
 		});
 
@@ -87,7 +90,7 @@ window.onload = function () {
 			if (!client) return;
 
 			for (var v = 0; v < 3; ++v) {
-				client.rotation[v] = data[v];
+				client.orientationRaw[v] = data[v];
 			}
 		});
 
@@ -119,15 +122,20 @@ window.onload = function () {
 		Object.keys(clients).forEach(function(id) {
 			var client = clients[id];
 
+
 			for (var v = 0; v < 3; ++v) {
-				client.cube.position.set(client.target[0], client.target[1], client.target[2]);
+				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], dataDamping);
+				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], dataDamping);
+				client.position[v] += dataSpeed * client.acceleration[v] * delta;
+				client.position[v] = lerp(client.position[v], 0., resetDamping);
+				client.cube.position.set(client.position[0], client.position[1], client.position[2]);
 			}
 
 			// rotation[v] = lerp(rotation[v], data[v], orientationDamping);
 			// cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
 
 			client.particle.update(elapsed);
-			client.particle.setTarget([Math.cos(elapsed)*5., 0, Math.sin(elapsed)*5.]);
+			client.particle.setTarget(client.position);
 		});
 
 		renderer.render( scene, camera );
