@@ -18,7 +18,7 @@ window.onload = function () {
 	document.body.appendChild( renderer.domElement );
 
 	var scene = new THREE.Scene();
-	var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.01, 1000);
+	var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
 	camera.position.z = 5;
 	var controls = new THREE.OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
@@ -64,23 +64,19 @@ window.onload = function () {
 			scene.add(spray);
 
 			var particle = new Particle(renderer);
-			var ribbon = new Ribbon(renderer);
 			particle.update(elapsed);
-			ribbon.update(elapsed);
 			scene.add(particle);
-			scene.add(ribbon);
-
-			// var deviceControl = new THREE.DeviceOrientationControls()
 
 			var client = {
 				spray: spray,
 				particle: particle,
-				ribbon: ribbon,
+				ribbons: [],
 				accelerationRaw: [0,0,0],
 				orientationRaw: [0,0,0],
 				acceleration: [0,0,0],
 				orientation: [0,0,0],
 				position: [0,0,0],
+				spraying: false,
 				euler: new THREE.Euler(),
 			};
 			clients[id] = client;
@@ -90,13 +86,15 @@ window.onload = function () {
 			var client = clients[id];
 			if (!client) return;
 
-			scene.remove(client.cube);
+			scene.remove(client.spray);
 
 			client.particle.dispose();
 			scene.remove(client.particle);
 
-			client.ribbon.dispose();
-			scene.remove(client.ribbon);
+			client.ribbons.forEach(ribbon => {
+				ribbon.dispose();
+				scene.remove(ribbon);
+			})
 
 			delete clients[id];
 		});
@@ -114,11 +112,9 @@ window.onload = function () {
 			var client = clients[id];
 			if (!client) return;
 
-			var color = new THREE.Color(data);
-			client.particle.setColor(color);
-			client.ribbon.setColor(color);
-
-			client.spray.material.uniforms.color.value = [color.r, color.g, color.b];
+			client.color = new THREE.Color(data);
+			client.particle.setColor(client.color);
+			client.spray.material.uniforms.color.value = client.color;
 		});
 
 		socket.on('orientation', function (id, data) {
@@ -134,13 +130,20 @@ window.onload = function () {
 			var client = clients[id];
 			if (!client) return;
 
+			client.spraying = false;
 		});
 
 		socket.on('spray-on', function (id) {
 			var client = clients[id];
 			if (!client) return;
 
-			// setPressure(1);
+			client.spraying = true;
+
+			var ribbon = new Ribbon(renderer);
+			ribbon.startAt(client.position);
+			ribbon.setColor(client.color);
+			scene.add(ribbon);
+			client.ribbons.push(ribbon);
 		});
 
 		socket.on('spray-pressure', function (id, pressure) {
@@ -194,11 +197,18 @@ window.onload = function () {
 				-THREE.Math.degToRad(client.orientation[2]),
 				'YXZ');
 
-			client.ribbon.update(elapsed);
-			client.ribbon.setTarget(client.position);
+			if (client.spraying && client.ribbons.length > 0) {
+				var ribbon = client.ribbons[client.ribbons.length-1];
+				ribbon.update(elapsed);
+				ribbon.setTarget(client.position);
+			}
 			
 			client.particle.update(elapsed);
-			client.particle.setTarget(client.position);
+			
+			if (client.spraying) {
+				client.particle.spray();
+				client.particle.setTarget(client.position);
+			}
 		});
 
 		renderer.render( scene, camera );

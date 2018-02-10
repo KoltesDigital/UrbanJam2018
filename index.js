@@ -48,9 +48,9 @@ io.on('connection', function(socket) {
 		if (screenSocket)
 			screenSocket.emit('spray-off', socket.id);
 	});
-	socket.on('spray-off', function() {
+	socket.on('spray-on', function() {
 		if (screenSocket)
-			screenSocket.emit('spray-off', socket.id);
+			screenSocket.emit('spray-on', socket.id);
 	});
 	socket.on('spray-pressure', function(data) {
 		if (screenSocket)

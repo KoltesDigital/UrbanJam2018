@@ -9,10 +9,8 @@ function Ribbon(renderer) {
 	var targetRaw = [0,0,0];
 	var targetDamping = .5;
 
-	var color = [1,1,1];
-
 	var uniforms = {
-		color: { value: color },
+		color: { value: [1,1,1] },
 		resolution: { value: [1, 1] },
 		target: { value: target },
 	};
@@ -72,15 +70,26 @@ function Ribbon(renderer) {
 		}
 	}
 
+	this.startAt = function (target_) {
+		targetRaw = target_;
+		for (var c = this.children.length - 1; c >= 0; --c) {
+			var geometry = this.children[c].geometry;
+			var array = geometry.attributes.position.array;
+			for (var p = 0; p < array.length/3; ++p) {
+				for (var v = 0; v < 3; ++v) {
+					array[p*3 + v] = targetRaw[v];
+				}
+			}
+		}
+		geometry.attributes.position.needsUpdate = true;
+	}
+
 	this.setTarget = function (target_) {
 		targetRaw = target_;
 	}
 
 	this.setColor = function (color_) {
-		color[0] = color_.r;
-		color[1] = color_.g;
-		color[2] = color_.b;
-		uniforms.color.value = color;
+		uniforms.color.value = color_;
 	}
 
 	this.dispose = function () {

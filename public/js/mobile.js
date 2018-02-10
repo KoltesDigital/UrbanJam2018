@@ -97,6 +97,7 @@ window.onload = function () {
 
 	sprayContainer.addEventListener('touchend', function (event) {
 		event.preventDefault();
+		socket.emit('spray-off');
 
 		clearInterval(sprayId);
 		sprayId = null;

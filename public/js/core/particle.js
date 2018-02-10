@@ -49,12 +49,19 @@ function Particle (renderer) {
 		uniforms.time.value = elapsed;
 		uniforms.positionTexture.value = bufferPosition.getTexture();
 		uniforms.velocityTexture.value = bufferVelocity.getTexture();
-		if (lastframe + 1./framerate < elapsed) {
-			uniforms.spawnIndex.value = (uniforms.spawnIndex.value + 5) % (dimension * dimension);
-			lastframe = elapsed;
-		}
 		bufferPosition.update();
 		bufferVelocity.update();
+	}
+
+	this.spray = function() {
+		if (lastframe + 1./framerate < uniforms.time.value) {
+			uniforms.spawnIndex.value = (uniforms.spawnIndex.value + 5) % (dimension * dimension);
+			lastframe = uniforms.time.value;
+		}
+	}
+
+	this.setPressure = function() {
+
 	}
 
 	this.setTarget = function(target) {
