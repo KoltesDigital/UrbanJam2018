@@ -9,7 +9,11 @@ function closestPowerOfTwo (num) {
 }
 
 function distance (ax,ay,bx,by) {
-	return Math.sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by));
+  return Math.sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by));
+}
+
+function distance3 (ax,ay,az,bx,by,bz) {
+	return Math.sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
 }
 
 function direction (ax,ay,bx,by) {

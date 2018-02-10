@@ -59,12 +59,16 @@ window.onload = function () {
 			scene.add(spray);
 
 			var particle = new Particle(renderer);
+			var ribbon = new Ribbon(renderer);
 			particle.update(elapsed);
+			ribbon.update(elapsed);
 			scene.add(particle);
+			scene.add(ribbon);
 
 			var client = {
 				spray: spray,
 				particle: particle,
+				ribbon: ribbon,
 				accelerationRaw: [0,0,0],
 				orientationRaw: [0,0,0],
 				acceleration: [0,0,0],
@@ -82,6 +86,9 @@ window.onload = function () {
 
 			client.particle.dispose();
 			scene.remove(client.particle);
+
+			client.ribbon.dispose();
+			scene.remove(client.ribbon);
 
 			delete clients[id];
 		});
@@ -144,6 +151,9 @@ window.onload = function () {
 			var PI2 = Math.PI * 2.;
 			client.spray.rotation.set(PI2*client.orientation[0]/360,PI2*client.orientation[1]/180,PI2*client.orientation[2]/90);
 
+			client.ribbon.update(elapsed);
+			client.ribbon.setTarget(client.position);
+			
 			client.particle.update(elapsed);
 			client.particle.setTarget(client.position);
 		});
