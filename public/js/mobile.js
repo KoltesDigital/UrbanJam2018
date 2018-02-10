@@ -140,7 +140,8 @@ function finishedLoading(bufferList) {
 		audioShaking.start();
 		audioSpray.start();
 
-		audioSpray.gainNode.gain.linearRampToValueAtTime(.5, context.currentTime + .1);
+		audioSpray.gainNode.gain.setTargetAtTime(.5, context.currentTime, .1);
+		audioSpray.source.playbackRate.setValueAtTime(1, context.currentTime);
 	}, false);
 
 	sprayContainer.addEventListener('touchend', function (event) {
@@ -152,16 +153,21 @@ function finishedLoading(bufferList) {
 
 		sprayContainer.classList.remove('spray-on');
 
-		audioSpray.gainNode.gain.linearRampToValueAtTime(0, context.currentTime + .1);
+		audioSpray.gainNode.gain.setTargetAtTime(0, context.currentTime, .1);
 	}, false);
 
 	var pressure = 1;
 	function updatePressure(delta) {
 		pressure += delta;
-		if (pressure < 0) pressure = 0;
+		if (pressure < 0) {
+			pressure = 0;
+			audioSpray.gainNode.gain.setTargetAtTime(0, context.currentTime, .1);
+		}
 		if (pressure > 1) pressure = 1;
 		sprayColor.style.height = (pressure * 100) + '%';
 		socket.emit('spray-pressure', pressure);
+
+		audioSpray.source.playbackRate.setValueAtTime(.5 + .5 * pressure, context.currentTime);
 	}
 
 	if (window.DeviceOrientationEvent) {
