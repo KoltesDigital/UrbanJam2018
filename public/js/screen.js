@@ -37,6 +37,8 @@ window.onload = function () {
 		{ name:'particle.vert', url:'shaders/particle.vert' },
 		{ name:'particle.frag', url:'shaders/particle.frag' },
 		{ name:'position.frag', url:'shaders/position.frag' },
+		{ name:'ribbon.vert', url:'shaders/ribbon.vert' },
+		{ name:'ribbon.frag', url:'shaders/ribbon.frag' },
 		{ name:'velocity.frag', url:'shaders/velocity.frag' },
 		{ name:'spray.vert', url:'shaders/spray.vert' },
 		{ name:'spray.frag', url:'shaders/spray.frag' },
