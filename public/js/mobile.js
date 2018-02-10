@@ -84,6 +84,10 @@ window.onload = function () {
 
 		previousDate = Date.now();
 
+		if (isSprayOn()) {
+			clearInterval(sprayId);
+		}
+
 		sprayId = setInterval(function () {
 			var delta = (Date.now() - previousDate) * PRESSURE_DECREASE;
 			previousDate = Date.now();
@@ -97,7 +101,7 @@ window.onload = function () {
 		clearInterval(sprayId);
 		sprayId = null;
 
-		sprayContainer.classList.remove('spray-on');
+		sprayContainer.classList.remove('spray-off');
 	}, false);
 
 	var pressure = 1;
