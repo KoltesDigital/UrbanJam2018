@@ -14,11 +14,11 @@ window.onload = function () {
 	var colorContainer = document.getElementById('color-container');
 
 	var colors = [
-		'#ff6cc7',
-		'#84f460',
-		'#fee471',
-		'#6e94ff',
-		'#fff',
+		'#ee4035',
+		'#f37736',
+		'#fdf498',
+		'#7bc043',
+		'#0392cf',
 	];
 
 	function chooseColor(color) {
