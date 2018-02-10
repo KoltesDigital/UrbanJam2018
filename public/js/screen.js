@@ -86,13 +86,22 @@ window.onload = function () {
 			delete clients[id];
 		});
 
-		socket.on('acceleration', function(id, data) {
+		socket.on('acceleration', function (id, data) {
 			var client = clients[id];
 			if (!client) return;
 
 			for (var v = 0; v < 3; ++v) {
 				client.accelerationRaw[v] = data[v];
 			}
+		});
+
+		socket.on('color', function (id, data) {
+			var client = clients[id];
+			if (!client) return;
+
+			var color = new THREE.Color(data);
+			//client.particle.setColor(color);
+			//client.ribbon.setColor(color);
 		});
 
 		socket.on('orientation', function (id, data) {

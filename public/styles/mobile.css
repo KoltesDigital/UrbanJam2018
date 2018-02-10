@@ -1,0 +1,45 @@
+* {
+	box-sizing: border-box;
+}
+
+html, body {
+	width: 100%;
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	background: black;
+}
+
+#spray-container {
+	position: absolute;
+}
+
+#spray-mask {
+	background: no-repeat url('../images/spray_icon.png');
+	background-size: 100% 100%;
+	width: 100%;
+	height: 100%;
+}
+
+#color-container {
+	position: absolute;
+	text-align: center;
+	left: 0px;
+	bottom: 0px;
+}
+
+.color {
+	display: inline-block;
+	position: relative;
+	border-radius: 50%;
+	margin: 5px;
+}
+
+.color:before {
+	display: block;
+	content: "";
+	width: 100%;
+	padding-top: 100%;
+}
