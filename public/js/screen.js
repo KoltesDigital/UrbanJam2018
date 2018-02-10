@@ -1,12 +1,12 @@
 var socket = io();
 
-socket.emit('message', 'hello from screen');
-
-socket.on('message', function(msg) {
-	console.log(msg);
+socket.on('connect', function () {
+	socket.emit('screen');
 });
 
 var PI2 = Math.PI/2.;
+
+var clients = {};
 
 window.onload = function () {
 
@@ -24,11 +24,9 @@ window.onload = function () {
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.25;
 	controls.rotateSpeed = 0.25;
-
-	var cube;
-	var target = [0,0,0];
-	var rotation = [0,0,0];
-	var particle;
+	var dataDamping = .5;
+	var resetDamping = .01;
+	var dataSpeed = 1.;
 
 	load([
 		// { name:'cursor', url:'images/cursor.png' },
@@ -45,24 +43,56 @@ window.onload = function () {
 
 		var geometry = new THREE.BoxGeometry( .3, .6, .3 );
 		var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-		cube = new THREE.Mesh( geometry, material );
-		scene.add( cube );
 
-		socket.on('acceleration', function(data) {
+		socket.on('client-connect', function (id) {
+			var cube = new THREE.Mesh(geometry, material);
+			scene.add(cube);
+
+			var particle = new Particle(renderer);
+			particle.update(elapsed);
+			scene.add(particle);
+
+			var client = {
+				cube: cube,
+				particle: particle,
+				accelerationRaw: [0,0,0],
+				orientationRaw: [0,0,0],
+				acceleration: [0,0,0],
+				orientation: [0,0,0],
+				position: [0,0,0],
+			};
+			clients[id] = client;
+		});
+
+		socket.on('client-disconnect', function (id) {
+			var client = clients[id];
+			if (!client) return;
+
+			scene.remove(client.cube);
+
+			client.particle.dispose();
+			scene.remove(client.particle);
+
+			delete clients[id];
+		});
+
+		socket.on('acceleration', function(id, data) {
+			var client = clients[id];
+			if (!client) return;
+
 			for (var v = 0; v < 3; ++v) {
-				target[v] = data[v];
+				client.accelerationRaw[v] = data[v];
 			}
 		});
 
-		socket.on('orientation', function(data) {
+		socket.on('orientation', function (id, data) {
+			var client = clients[id];
+			if (!client) return;
+
 			for (var v = 0; v < 3; ++v) {
-				rotation[v] = data[v];
+				client.orientationRaw[v] = data[v];
 			}
 		});
-
-		particle = new Particle(renderer);
-		particle.update(elapsed);
-		scene.add(particle);
 
 		document.body.style.cursor = 'none';
 
@@ -75,13 +105,13 @@ window.onload = function () {
 
 		requestAnimationFrame(update);
 	}
-	
+
 	function update (elapsed) {
 		requestAnimationFrame(update);
 
 		elapsed *= .001;
 		var delta = Math.max(0, Math.min(1, elapsed - frameElapsed));
-		
+
 		var mousex = (Mouse.x/window.innerWidth)*2.-1.;
 		var mousey = (1.-Mouse.y/window.innerHeight)*2.-1.;
 		var lastMouseX = (Mouse.lastX/window.innerWidth)*2.-1.;
@@ -89,15 +119,24 @@ window.onload = function () {
 
 		controls.update();
 
-		for (var v = 0; v < 3; ++v) {
-			cube.position.set(target[0],target[1],target[2]);
-		}
+		Object.keys(clients).forEach(function(id) {
+			var client = clients[id];
 
-		// rotation[v] = lerp(rotation[v], data[v], orientationDamping);
-		// cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
 
-		particle.update(elapsed);
-		particle.setTarget(target);
+			for (var v = 0; v < 3; ++v) {
+				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], dataDamping);
+				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], dataDamping);
+				client.position[v] += dataSpeed * client.acceleration[v] * delta;
+				client.position[v] = lerp(client.position[v], 0., resetDamping);
+				client.cube.position.set(client.position[0], client.position[1], client.position[2]);
+			}
+
+			// rotation[v] = lerp(rotation[v], data[v], orientationDamping);
+			// cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
+
+			client.particle.update(elapsed);
+			client.particle.setTarget(client.position);
+		});
 
 		renderer.render( scene, camera );
 		frameElapsed = elapsed;
