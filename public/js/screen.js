@@ -120,6 +120,25 @@ window.onload = function () {
 			}
 		});
 
+		socket.on('spray-off', function (id) {
+			var client = clients[id];
+			if (!client) return;
+
+		});
+
+		socket.on('spray-on', function (id) {
+			var client = clients[id];
+			if (!client) return;
+
+			// setPressure(1);
+		});
+
+		socket.on('spray-pressure', function (id, pressure) {
+			var client = clients[id];
+			if (!client) return;
+
+		});
+
 		document.body.style.cursor = 'none';
 
 		document.addEventListener('keydown', Keyboard.onKeyDown);
