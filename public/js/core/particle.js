@@ -2,7 +2,7 @@ function Particle (renderer) {
 
 	THREE.Object3D.call(this);
 
-	var dimension = 64;
+	var dimension = 32;
 	var uniforms = {
 		positionTexture: { value: createDataTexture(getRandomPoints(dimension*dimension), 3) },
 		velocityTexture: { value: createDataTexture(getPoints(dimension*dimension), 3) },
@@ -12,7 +12,7 @@ function Particle (renderer) {
 		time: { value: 0 },
 	};
 
-	var framerate = 60;
+	var framerate = 120;
 	var lastframe = 0;
 
 	createGeometry(randomPositionAttribute(dimension*dimension)).forEach(geometry => {
@@ -47,7 +47,7 @@ function Particle (renderer) {
 		uniforms.positionTexture.value = bufferPosition.getTexture();
 		uniforms.velocityTexture.value = bufferVelocity.getTexture();
 		if (lastframe + 1./framerate < elapsed) {
-			uniforms.spawnIndex.value = (uniforms.spawnIndex.value + 1) % (dimension * dimension);
+			uniforms.spawnIndex.value = (uniforms.spawnIndex.value + 5) % (dimension * dimension);
 			lastframe = elapsed;
 		}
 		bufferPosition.update();
