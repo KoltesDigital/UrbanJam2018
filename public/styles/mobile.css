@@ -15,6 +15,20 @@ body {
 #spray-container {
 	position: absolute;
 	background: #333;
+	transition: transform 300ms;
+	transform: scale(1);
+}
+
+#spray-container.spray-on {
+	transform: scale(.9);
+}
+
+#spray-color-container {
+	position: absolute;
+	left: 1px;
+	top: 1px;
+	right: 1px;
+	bottom: 1px;
 }
 
 #spray-color {
