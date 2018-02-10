@@ -18,7 +18,7 @@ window.onload = function () {
 	document.body.appendChild( renderer.domElement );
 
 	var scene = new THREE.Scene();
-	var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
+	var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.01, 1000);
 	camera.position.z = 5;
 	var controls = new THREE.OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
