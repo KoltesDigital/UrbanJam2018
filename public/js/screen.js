@@ -30,14 +30,18 @@ window.onload = function () {
 	var target = [0,0,0];
 	var rotation = [0,0,0];
 	var dimension = 128;
+	var accelerationSpeed = .01;
+	var accelerationDamping = .1;
+	var orientationDamping = .1;
+	var cube;
 
 	load([
 		// { name:'cursor', url:'images/cursor.png' },
 	],[
 		{ name:'header', url:'shaders/header.glsl' },
+		{ name:'buffer.vert', url:'shaders/buffer.vert' },
 		{ name:'particle.vert', url:'shaders/particle.vert' },
 		{ name:'particle.frag', url:'shaders/particle.frag' },
-		{ name:'buffer.vert', url:'shaders/buffer.vert' },
 		{ name:'position.frag', url:'shaders/position.frag' },
 		{ name:'velocity.frag', url:'shaders/velocity.frag' },
 	], setup);
@@ -80,26 +84,19 @@ window.onload = function () {
 
 		var geometry = new THREE.BoxGeometry( .3, .6, .3 );
 		var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-		var cube = new THREE.Mesh( geometry, material );
+		cube = new THREE.Mesh( geometry, material );
 		scene.add( cube );
 
-		var accelerationSpeed = .1;
-		var accelerationDamping = .1;
 		socket.on('acceleration', function(data) {
 			for (var v = 0; v < 3; ++v) {
-				target[v] += data[v] * accelerationSpeed;
-				target[v] = lerp(target[v], 0., accelerationDamping);
-				uniforms.target.value[v] = target[v];
+				target[v] = data[v];
 			}
-			cube.position.set(target[0],target[1],target[2]);
 		});
 
-		var orientationDamping = .1;
 		socket.on('orientation', function(data) {
 			for (var v = 0; v < 3; ++v) {
-				rotation[v] = lerp(rotation[v], data[v], orientationDamping);
+				rotation[v] = data[v];
 			}
-			cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
 		});
 
 		document.body.style.cursor = 'none';
@@ -127,6 +124,15 @@ window.onload = function () {
 		var lastMouseY = (1.-Mouse.lastY/window.innerHeight)*2.-1.;
 
 		controls.update();
+
+		for (var v = 0; v < 3; ++v) {
+			uniforms.target.value[v] += target[v] * accelerationSpeed;
+			uniforms.target.value[v] = lerp(uniforms.target.value[v], 0., accelerationDamping);
+			cube.position.set(uniforms.target.value[0],uniforms.target.value[1],uniforms.target.value[2]);
+		}
+
+		// rotation[v] = lerp(rotation[v], data[v], orientationDamping);
+		// cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
 
 		uniforms.positionTexture.value = bufferPosition.getTexture();
 		uniforms.velocityTexture.value = bufferVelocity.getTexture();
