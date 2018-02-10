@@ -49,12 +49,17 @@ window.onload = function () {
 	function setup () {
 
 		var geometry = meshes['spray'].children[0].geometry;
-		var material = new THREE.ShaderMaterial({
-			vertexShader: shaders['header']+shaders['spray.vert'],
-			fragmentShader: shaders['header']+shaders['spray.frag'],
-		});
 
 		socket.on('client-connect', function (id) {
+
+			var material = new THREE.ShaderMaterial({
+				vertexShader: shaders['header']+shaders['spray.vert'],
+				fragmentShader: shaders['header']+shaders['spray.frag'],
+				uniforms: {
+					color: { value: [1,1,1] },
+				}
+			});
+
 			var spray = new THREE.Mesh(geometry, material);
 			scene.add(spray);
 
@@ -65,6 +70,8 @@ window.onload = function () {
 			scene.add(particle);
 			scene.add(ribbon);
 
+			// var deviceControl = new THREE.DeviceOrientationControls()
+
 			var client = {
 				spray: spray,
 				particle: particle,
@@ -74,6 +81,7 @@ window.onload = function () {
 				acceleration: [0,0,0],
 				orientation: [0,0,0],
 				position: [0,0,0],
+				euler: new THREE.Euler(),
 			};
 			clients[id] = client;
 		});
@@ -109,6 +117,8 @@ window.onload = function () {
 			var color = new THREE.Color(data);
 			client.particle.setColor(color);
 			client.ribbon.setColor(color);
+
+			client.spray.material.uniforms.color.value = [color.r, color.g, color.b];
 		});
 
 		socket.on('orientation', function (id, data) {
@@ -176,8 +186,13 @@ window.onload = function () {
 				client.spray.position.set(client.position[0], client.position[1], client.position[2]);
 			}
 
-			var PI2 = Math.PI * 2.;
-			client.spray.rotation.set(PI2*client.orientation[0]/360,PI2*client.orientation[1]/180,PI2*client.orientation[2]/90);
+
+			// var PI2 = Math.PI * 2.;
+			client.spray.rotation.set(
+				THREE.Math.degToRad(client.orientation[1]),
+				THREE.Math.degToRad(client.orientation[0]),
+				-THREE.Math.degToRad(client.orientation[2]),
+				'YXZ');
 
 			client.ribbon.update(elapsed);
 			client.ribbon.setTarget(client.position);

@@ -1,6 +1,8 @@
 
+uniform vec3 color;
 varying vec3 vNormal, vView;
 
 void main () {
-	gl_FragColor = vec4(normalize(vNormal)*.5+.5, 1);
+	float shade = dot(normalize(vNormal), -normalize(vView))*.5+.5;
+	gl_FragColor = vec4(color * shade, 1);
 }
