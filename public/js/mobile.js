@@ -1,4 +1,47 @@
-window.onload = function () {
+window.onload = function () {  // Fix up prefixing
+	window.AudioContext = window.AudioContext || window.webkitAudioContext;
+	context = new AudioContext();
+
+	bufferLoader = new BufferLoader(
+		context,
+		[
+			'sounds/shaking.mp3',
+			'sounds/spray.mp3',
+		],
+		finishedLoading
+	);
+
+	bufferLoader.load();
+}
+
+function createSource(buffer) {
+	var source = context.createBufferSource();
+	var gainNode = context.createGain();
+	source.buffer = buffer;
+	source.loop = true;
+	source.connect(gainNode);
+	gainNode.connect(context.destination);
+
+	var started = false;
+
+	return {
+		source: source,
+		gainNode: gainNode,
+		start: function() {
+			if (started) return;
+			source.start(0);
+			started = true;
+		}
+	};
+}
+
+function finishedLoading(bufferList) {
+	var audioShaking = createSource(bufferList[0]);
+	var audioSpray = createSource(bufferList[1]);
+	var currTime = context.currentTime;
+	audioShaking.gainNode.gain.linearRampToValueAtTime(0, currTime);
+	audioSpray.gainNode.gain.linearRampToValueAtTime(0, currTime);
+
 	var PRESSURE_INCREASE = 0.00002; // when shaking, m.s-2.ms-1
 	var PRESSURE_INCREASE_ACCELERATION_THRESHOLD = 10; // when shaking, m.s-2
 	var PRESSURE_DECREASE = - 0.0001; // when spraying, ms-1
@@ -32,7 +75,7 @@ window.onload = function () {
 		var element = document.createElement('div');
 		element.className = 'color';
 		element.style.background = color;
-		element.addEventListener('click', function(event) {
+		element.addEventListener('touchstart', function(event) {
 			event.preventDefault();
 			chooseColor(color);
 		}, false);
@@ -93,6 +136,11 @@ window.onload = function () {
 			previousDate = Date.now();
 			updatePressure(delta);
 		});
+
+		audioShaking.start();
+		audioSpray.start();
+
+		audioSpray.gainNode.gain.linearRampToValueAtTime(.5, context.currentTime + .1);
 	}, false);
 
 	sprayContainer.addEventListener('touchend', function (event) {
@@ -102,7 +150,9 @@ window.onload = function () {
 		clearInterval(sprayId);
 		sprayId = null;
 
-		sprayContainer.classList.remove('spray-off');
+		sprayContainer.classList.remove('spray-on');
+
+		audioSpray.gainNode.gain.linearRampToValueAtTime(0, context.currentTime + .1);
 	}, false);
 
 	var pressure = 1;
@@ -130,13 +180,17 @@ window.onload = function () {
 			var acc = event.acceleration;
 			socket.emit('acceleration', [acc.x, acc.y, acc.z]);
 
+			var increased = false;
 			if (!isSprayOn()) {
 				var length = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
 				if (length >= PRESSURE_INCREASE_ACCELERATION_THRESHOLD) {
 					var delta = (Date.now() - previousMotionDate) * length * PRESSURE_INCREASE;
 					updatePressure(delta);
+					increased = true;
 				}
 			}
+
+			audioShaking.gainNode.gain.setTargetAtTime(increased ? 1 : 0, context.currentTime, .1);
 
 			previousMotionDate = Date.now();
 		}, true);
