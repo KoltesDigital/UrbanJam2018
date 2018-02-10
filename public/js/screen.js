@@ -24,7 +24,8 @@ window.onload = function () {
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.25;
 	controls.rotateSpeed = 0.25;
-	var dataDamping = .5;
+	var accelerationDamping = .5;
+	var orientationDamping = .1;
 	var resetDamping = .01;
 	var dataSpeed = 1.;
 
@@ -37,23 +38,30 @@ window.onload = function () {
 		{ name:'particle.frag', url:'shaders/particle.frag' },
 		{ name:'position.frag', url:'shaders/position.frag' },
 		{ name:'velocity.frag', url:'shaders/velocity.frag' },
+		{ name:'spray.vert', url:'shaders/spray.vert' },
+		{ name:'spray.frag', url:'shaders/spray.frag' },
+	],[
+		{ name:'spray', url:'meshes/spray.obj' },
 	], setup);
 
 	function setup () {
 
-		var geometry = new THREE.BoxGeometry( .3, .6, .3 );
-		var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+		var geometry = meshes['spray'].children[0].geometry;
+		var material = new THREE.ShaderMaterial({
+			vertexShader: shaders['header']+shaders['spray.vert'],
+			fragmentShader: shaders['header']+shaders['spray.frag'],
+		});
 
 		socket.on('client-connect', function (id) {
-			var cube = new THREE.Mesh(geometry, material);
-			scene.add(cube);
+			var spray = new THREE.Mesh(geometry, material);
+			scene.add(spray);
 
 			var particle = new Particle(renderer);
 			particle.update(elapsed);
 			scene.add(particle);
 
 			var client = {
-				cube: cube,
+				spray: spray,
 				particle: particle,
 				accelerationRaw: [0,0,0],
 				orientationRaw: [0,0,0],
@@ -124,15 +132,15 @@ window.onload = function () {
 
 
 			for (var v = 0; v < 3; ++v) {
-				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], dataDamping);
-				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], dataDamping);
+				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], accelerationDamping);
+				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], orientationDamping);
 				client.position[v] += dataSpeed * client.acceleration[v] * delta;
 				client.position[v] = lerp(client.position[v], 0., resetDamping);
-				client.cube.position.set(client.position[0], client.position[1], client.position[2]);
+				client.spray.position.set(client.position[0], client.position[1], client.position[2]);
 			}
 
-			// rotation[v] = lerp(rotation[v], data[v], orientationDamping);
-			// cube.rotation.set(rotation[0]/360,rotation[1]/180,rotation[2]/90);
+			var PI2 = Math.PI * 2.;
+			client.spray.rotation.set(PI2*client.orientation[0]/360,PI2*client.orientation[1]/180,PI2*client.orientation[2]/90);
 
 			client.particle.update(elapsed);
 			client.particle.setTarget(client.position);
