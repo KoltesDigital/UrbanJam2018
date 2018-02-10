@@ -18,7 +18,7 @@ window.onload = function () {
 	document.body.appendChild( renderer.domElement );
 
 	var scene = new THREE.Scene();
-	var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
+	var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
 	camera.position.z = 5;
 	var controls = new THREE.OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
@@ -49,12 +49,17 @@ window.onload = function () {
 	function setup () {
 
 		var geometry = meshes['spray'].children[0].geometry;
-		var material = new THREE.ShaderMaterial({
-			vertexShader: shaders['header']+shaders['spray.vert'],
-			fragmentShader: shaders['header']+shaders['spray.frag'],
-		});
 
 		socket.on('client-connect', function (id) {
+
+			var material = new THREE.ShaderMaterial({
+				vertexShader: shaders['header']+shaders['spray.vert'],
+				fragmentShader: shaders['header']+shaders['spray.frag'],
+				uniforms: {
+					color: { value: [1,1,1] },
+				}
+			});
+
 			var spray = new THREE.Mesh(geometry, material);
 			scene.add(spray);
 
@@ -65,11 +70,14 @@ window.onload = function () {
 			var client = {
 				spray: spray,
 				particle: particle,
+				ribbons: [],
 				accelerationRaw: [0,0,0],
 				orientationRaw: [0,0,0],
 				acceleration: [0,0,0],
 				orientation: [0,0,0],
 				position: [0,0,0],
+				spraying: false,
+				euler: new THREE.Euler(),
 			};
 			clients[id] = client;
 		});
@@ -78,21 +86,35 @@ window.onload = function () {
 			var client = clients[id];
 			if (!client) return;
 
-			scene.remove(client.cube);
+			scene.remove(client.spray);
 
 			client.particle.dispose();
 			scene.remove(client.particle);
 
+			client.ribbons.forEach(ribbon => {
+				ribbon.dispose();
+				scene.remove(ribbon);
+			})
+
 			delete clients[id];
 		});
 
-		socket.on('acceleration', function(id, data) {
+		socket.on('acceleration', function (id, data) {
 			var client = clients[id];
 			if (!client) return;
 
 			for (var v = 0; v < 3; ++v) {
 				client.accelerationRaw[v] = data[v];
 			}
+		});
+
+		socket.on('color', function (id, data) {
+			var client = clients[id];
+			if (!client) return;
+
+			client.color = new THREE.Color(data);
+			client.particle.setColor(client.color);
+			client.spray.material.uniforms.color.value = client.color;
 		});
 
 		socket.on('orientation', function (id, data) {
@@ -102,6 +124,32 @@ window.onload = function () {
 			for (var v = 0; v < 3; ++v) {
 				client.orientationRaw[v] = data[v];
 			}
+		});
+
+		socket.on('spray-off', function (id) {
+			var client = clients[id];
+			if (!client) return;
+
+			client.spraying = false;
+		});
+
+		socket.on('spray-on', function (id) {
+			var client = clients[id];
+			if (!client) return;
+
+			client.spraying = true;
+
+			var ribbon = new Ribbon(renderer);
+			ribbon.startAt(client.position);
+			ribbon.setColor(client.color);
+			scene.add(ribbon);
+			client.ribbons.push(ribbon);
+		});
+
+		socket.on('spray-pressure', function (id, pressure) {
+			var client = clients[id];
+			if (!client) return;
+
 		});
 
 		document.body.style.cursor = 'none';
@@ -141,11 +189,26 @@ window.onload = function () {
 				client.spray.position.set(client.position[0], client.position[1], client.position[2]);
 			}
 
-			var PI2 = Math.PI * 2.;
-			client.spray.rotation.set(PI2*client.orientation[0]/360,PI2*client.orientation[1]/180,PI2*client.orientation[2]/90);
 
+			// var PI2 = Math.PI * 2.;
+			client.spray.rotation.set(
+				THREE.Math.degToRad(client.orientation[1]),
+				THREE.Math.degToRad(client.orientation[0]),
+				-THREE.Math.degToRad(client.orientation[2]),
+				'YXZ');
+
+			if (client.spraying && client.ribbons.length > 0) {
+				var ribbon = client.ribbons[client.ribbons.length-1];
+				ribbon.update(elapsed);
+				ribbon.setTarget(client.position);
+			}
+			
 			client.particle.update(elapsed);
-			client.particle.setTarget(client.position);
+			
+			if (client.spraying) {
+				client.particle.spray();
+				client.particle.setTarget(client.position);
+			}
 		});
 
 		renderer.render( scene, camera );

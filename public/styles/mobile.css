@@ -1,0 +1,71 @@
+* {
+	box-sizing: border-box;
+}
+
+html, body {
+	width: 100%;
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	background: black;
+}
+
+#spray-container {
+	position: absolute;
+	background: #333;
+	transition: transform 300ms;
+	transform: scale(1);
+}
+
+#spray-container.spray-on {
+	transform: scale(.9);
+}
+
+#spray-color-container {
+	position: absolute;
+	left: 1px;
+	top: 1px;
+	right: 1px;
+	bottom: 1px;
+}
+
+#spray-color {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+}
+
+#spray-mask {
+	background: no-repeat url('../images/spray_icon.png');
+	background-size: 100% 100%;
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+}
+
+#color-container {
+	position: absolute;
+	text-align: center;
+	left: 0px;
+	bottom: 0px;
+}
+
+.color {
+	display: inline-block;
+	position: relative;
+	border-radius: 50%;
+	margin: 5px;
+}
+
+.color:before {
+	display: block;
+	content: "";
+	width: 100%;
+	padding-top: 100%;
+}

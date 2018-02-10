@@ -2,8 +2,11 @@ function Particle (renderer) {
 
 	THREE.Object3D.call(this);
 
-	var dimension = 32;
+	var color = [1,1,1];
+
+	var dimension = 64;
 	var uniforms = {
+		color: { value: color },
 		positionTexture: { value: createDataTexture(getRandomPoints(dimension*dimension), 3) },
 		velocityTexture: { value: createDataTexture(getPoints(dimension*dimension), 3) },
 		dimension: { value: dimension },
@@ -46,16 +49,30 @@ function Particle (renderer) {
 		uniforms.time.value = elapsed;
 		uniforms.positionTexture.value = bufferPosition.getTexture();
 		uniforms.velocityTexture.value = bufferVelocity.getTexture();
-		if (lastframe + 1./framerate < elapsed) {
-			uniforms.spawnIndex.value = (uniforms.spawnIndex.value + 5) % (dimension * dimension);
-			lastframe = elapsed;
-		}
 		bufferPosition.update();
 		bufferVelocity.update();
 	}
 
+	this.spray = function() {
+		if (lastframe + 1./framerate < uniforms.time.value) {
+			uniforms.spawnIndex.value = (uniforms.spawnIndex.value + 5) % (dimension * dimension);
+			lastframe = uniforms.time.value;
+		}
+	}
+
+	this.setPressure = function() {
+
+	}
+
 	this.setTarget = function(target) {
 		uniforms.target.value = target;
+	}
+
+	this.setColor = function (color_) {
+		color[0] = color_.r;
+		color[1] = color_.g;
+		color[2] = color_.b;
+		uniforms.color.value = color;
 	}
 
 	this.dispose = function() {

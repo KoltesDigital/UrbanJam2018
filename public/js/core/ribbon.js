@@ -1,37 +1,27 @@
 function Ribbon(renderer) {
 
 	THREE.Object3D.call(this);
+	
+	var segments = 100;
+	var segmentLength = .1;
+
+	var target = [0,0,0];
+	var targetRaw = [0,0,0];
+	var targetDamping = .5;
 
 	var uniforms = {
-		resolution: {
-			value: [1, 1],
-		},
+		color: { value: [1,1,1] },
+		resolution: { value: [1, 1] },
+		target: { value: target },
 	};
 
-	var count = 64;
+	var attributes = randomPositionAttribute(1);
+	attributes.previousPosition = {
+		array: [getPoints(attributes.position.array.length/3)],
+		itemSize: 3,
+	}
 
-	createGeometry({
-		position: {
-			array: count*3,
-			itemSize: 3
-		},
-		nextPosition: {
-			array: count*3,
-			itemSize: 3
-		},
-		previousPosition: {
-			array: count*3,
-			itemSize: 3
-		},
-		direction: {
-			array: count,
-			itemSize: 1
-		},
-		width: {
-			array: count,
-			itemSize: 1
-		},
-	}).forEach(geometry => {
+	createGeometry(attributes, [1,segments]).forEach(geometry => {
 		this.add(new THREE.Mesh(geometry, new THREE.ShaderMaterial({
 			vertexShader: shaders['header'] + shaders['ribbon.vert'],
 			fragmentShader: shaders['header'] + shaders['ribbon.frag'],
@@ -41,28 +31,65 @@ function Ribbon(renderer) {
 	})
 
 	this.update = function (elapsed) {
-		for (var c = this.children.count - 1; c >= 0; --c) {
-			//c.geometry.attributes.position.copyWithin(1;
-			for (var i = 0; i < count; ++i) {
-				c.geometry.attributes.position[i * 3] = Math.cos(i * .1);
-				c.geometry.attributes.position[i * 3 + 1] = Math.sin(i * .1);
-				c.geometry.attributes.position[i * 3 + 2] = 0;
+
+		for (var p = 0; p < 3; ++p) {
+			target[p] = lerp(target[p], targetRaw[p], targetDamping);
+		}
+
+		for (var c = this.children.length - 1; c >= 0; --c) {
+			var geometry = this.children[c].geometry;
+			var array = geometry.attributes.position.array;
+			for (var p = 0; p < 2; ++p) {
+				for (var v = 0; v < 3; ++v) {
+					array[p*3 + v] = target[v];
+				}
 			}
 
-			for (var i = 0; i < count - 1; ++i) {
-				c.geometry.attributes.previousPosition[i * 3] = c.geometry.attributes.position[i * 3 + 3];
-				c.geometry.attributes.previousPosition[i * 3 + 1] = c.geometry.attributes.position[i * 3 + 4];
-				c.geometry.attributes.previousPosition[i * 3 + 2] = c.geometry.attributes.position[i * 3 + 5];
+			var index2nd = 2*3;
+			var dist = distance3(target[0],target[1],target[2],array[index2nd],array[index2nd+1],array[index2nd+2]);
+			if (dist > segmentLength) {
+				for (var i = segments-1; i > 0; --i) {
+					for (var p = 0; p < 2; ++p) {
+						for (var v = 0; v < 3; ++v) {
+							array[i*3*2 + p*3 + v] = array[(i-1)*3*2 + p*3 + v];
+						}
+					}
+				}
+				geometry.attributes.position.needsUpdate = true;
 			}
 
-			c.geometry.attributes.previousPosition[count * 3 - 3] = c.geometry.attributes.position[count * 3 - 3];
-			c.geometry.attributes.previousPosition[count * 3 - 2] = c.geometry.attributes.position[count * 3 - 2];
-			c.geometry.attributes.previousPosition[count * 3 - 1] = c.geometry.attributes.position[count * 3 - 1];
+			var arrayPrev = geometry.attributes.previousPosition.array;
+			for (var i = 0; i < segments - 1; ++i) {
+				for (var p = 0; p < 2; ++p) {
+					arrayPrev[i*3*2 + p*3 + 0] = array[(i+1)*3*2 + p*3 + 0];
+					arrayPrev[i*3*2 + p*3 + 1] = array[(i+1)*3*2 + p*3 + 1];
+					arrayPrev[i*3*2 + p*3 + 2] = array[(i+1)*3*2 + p*3 + 2];
+				}
+			}
+			geometry.attributes.previousPosition.needsUpdate = true;
+		}
+	}
 
-			for (var i = 0; i < count - 1; ++i) {
-				c.geometry.attributes.previousPosition[i * 3] = c.geometry.attributes.position[i * 3 + 3];
+	this.startAt = function (target_) {
+		targetRaw = target_;
+		for (var c = this.children.length - 1; c >= 0; --c) {
+			var geometry = this.children[c].geometry;
+			var array = geometry.attributes.position.array;
+			for (var p = 0; p < array.length/3; ++p) {
+				for (var v = 0; v < 3; ++v) {
+					array[p*3 + v] = targetRaw[v];
+				}
 			}
 		}
+		geometry.attributes.position.needsUpdate = true;
+	}
+
+	this.setTarget = function (target_) {
+		targetRaw = target_;
+	}
+
+	this.setColor = function (color_) {
+		uniforms.color.value = color_;
 	}
 
 	this.dispose = function () {

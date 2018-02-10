@@ -16,6 +16,7 @@ var screenSocket = null;
 io.on('connection', function(socket) {
 	socket.on('disconnect', function() {
 		if (socket === screenSocket) {
+			console.log('screen disconnected')
 			screenSocket = null;
 		} else if (screenSocket) {
 			screenSocket.emit('client-disconnect', socket.id);
@@ -31,13 +32,29 @@ io.on('connection', function(socket) {
 			screenSocket.emit('client-connect', socket.id);
 	});
 
-	socket.on('orientation', function (data) {
+	socket.on('acceleration', function(data) {
 		if (screenSocket)
-			socket.broadcast.emit('orientation', socket.id, data);
+			screenSocket.emit('acceleration', socket.id, data);
 	});
-	socket.on('acceleration', function (data) {
+	socket.on('color', function(data) {
 		if (screenSocket)
-			socket.broadcast.emit('acceleration', socket.id, data);
+			screenSocket.emit('color', socket.id, data);
+	});
+	socket.on('orientation', function(data) {
+		if (screenSocket)
+			screenSocket.emit('orientation', socket.id, data);
+	});
+	socket.on('spray-off', function() {
+		if (screenSocket)
+			screenSocket.emit('spray-off', socket.id);
+	});
+	socket.on('spray-on', function() {
+		if (screenSocket)
+			screenSocket.emit('spray-on', socket.id);
+	});
+	socket.on('spray-pressure', function(data) {
+		if (screenSocket)
+			screenSocket.emit('spray-pressure', socket.id, data);
 	});
 });
 
