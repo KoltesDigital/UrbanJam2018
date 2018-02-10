@@ -80,7 +80,13 @@ window.onload = function () {
 		event.preventDefault();
 		socket.emit('spray-on');
 
+		sprayContainer.classList.add('spray-on');
+
 		previousDate = Date.now();
+
+		if (isSprayOn()) {
+			clearInterval(sprayId);
+		}
 
 		sprayId = setInterval(function () {
 			var delta = (Date.now() - previousDate) * PRESSURE_DECREASE;
@@ -91,8 +97,11 @@ window.onload = function () {
 
 	sprayContainer.addEventListener('touchend', function (event) {
 		event.preventDefault();
+
 		clearInterval(sprayId);
 		sprayId = null;
+
+		sprayContainer.classList.remove('spray-off');
 	}, false);
 
 	var pressure = 1;
