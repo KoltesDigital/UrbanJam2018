@@ -44,6 +44,18 @@ io.on('connection', function(socket) {
 		if (screenSocket)
 			screenSocket.emit('orientation', socket.id, data);
 	});
+	socket.on('spray-off', function() {
+		if (screenSocket)
+			screenSocket.emit('spray-off', socket.id);
+	});
+	socket.on('spray-off', function() {
+		if (screenSocket)
+			screenSocket.emit('spray-off', socket.id);
+	});
+	socket.on('spray-pressure', function(data) {
+		if (screenSocket)
+			screenSocket.emit('spray-pressure', socket.id, data);
+	});
 });
 
 http.listen(3000, function() {
