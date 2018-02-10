@@ -107,8 +107,8 @@ window.onload = function () {
 			if (!client) return;
 
 			var color = new THREE.Color(data);
-			//client.particle.setColor(color);
-			//client.ribbon.setColor(color);
+			client.particle.setColor(color);
+			client.ribbon.setColor(color);
 		});
 
 		socket.on('orientation', function (id, data) {

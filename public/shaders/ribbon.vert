@@ -1,7 +1,5 @@
 uniform vec2 resolution;
-
 attribute vec2 indexMap, anchor;
-
 attribute vec3 nextPosition, previousPosition;
 // attribute float direction, width;
 

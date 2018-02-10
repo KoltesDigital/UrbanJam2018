@@ -2,15 +2,17 @@ function Ribbon(renderer) {
 
 	THREE.Object3D.call(this);
 	
-	var segments = 100;
-	var segmentLength = .2;
+	var segments = 1000;
+	var segmentLength = .1;
 
 	var target = [0,0,0];
 	var targetRaw = [0,0,0];
 	var targetDamping = .5;
 
+	var color = [1,1,1];
 
 	var uniforms = {
+		color: { value: color },
 		resolution: { value: [1, 1] },
 		target: { value: target },
 	};
@@ -72,6 +74,13 @@ function Ribbon(renderer) {
 
 	this.setTarget = function (target_) {
 		targetRaw = target_;
+	}
+
+	this.setColor = function (color_) {
+		color[0] = color_.r;
+		color[1] = color_.g;
+		color[2] = color_.b;
+		uniforms.color.value = color;
 	}
 
 	this.dispose = function () {
