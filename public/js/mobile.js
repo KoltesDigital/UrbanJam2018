@@ -1,9 +1,7 @@
 var socket = io();
 
-socket.emit('message', 'hello from mobile');
-
-socket.on('message', function(msg) {
-	console.log(msg);
+socket.on('connect', function() {
+	socket.emit('mobile');
 });
 
 if (window.DeviceOrientationEvent) {

@@ -11,20 +11,33 @@ app.get('/', function(req, res) {
 	res.sendFile(__dirname + '/public/mobile.html');
 });
 
-io.on('connection', function(socket) {
-	console.log('a user connected');
-});
+var screenSocket = null;
 
 io.on('connection', function(socket) {
-	socket.on('message', function (msg) {
-		console.log('message:', msg);
-		socket.broadcast.emit('message', msg);
+	socket.on('disconnect', function() {
+		if (socket === screenSocket) {
+			screenSocket = null;
+		} else if (screenSocket) {
+			screenSocket.emit('client-disconnect', socket.id);
+		}
 	});
+
+	socket.on('screen', function() {
+		screenSocket = socket;
+	});
+
+	socket.on('mobile', function() {
+		if (screenSocket)
+			screenSocket.emit('client-connect', socket.id);
+	});
+
 	socket.on('orientation', function (data) {
-		socket.broadcast.emit('orientation', data);
+		if (screenSocket)
+			socket.broadcast.emit('orientation', socket.id, data);
 	});
 	socket.on('acceleration', function (data) {
-		socket.broadcast.emit('acceleration', data);
+		if (screenSocket)
+			socket.broadcast.emit('acceleration', socket.id, data);
 	});
 });
 
