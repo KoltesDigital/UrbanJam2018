@@ -1,8 +1,8 @@
-function Ribbon(renderer) {
+function Ribbon(renderer, targetPosition) {
 
 	THREE.Object3D.call(this);
 	this.frustumCulled = false;
-	
+
 	var segments = 200;
 	var segmentLength = .1;
 
@@ -39,7 +39,14 @@ function Ribbon(renderer) {
 		this.add(mesh);
 	})
 
+	function updateTargetRaw() {
+		targetRaw[0] = targetPosition.x;
+		targetRaw[1] = targetPosition.y;
+		targetRaw[2] = targetPosition.z;
+	}
+
 	this.update = function (elapsed) {
+		updateTargetRaw();
 
 		for (var p = 0; p < 3; ++p) {
 			target[p] = lerp(target[p], targetRaw[p], targetDamping);
@@ -86,8 +93,9 @@ function Ribbon(renderer) {
 		}
 	}
 
-	this.startAt = function (target_) {
-		targetRaw = target_;
+	this.start = function () {
+		updateTargetRaw();
+
 		for (var c = this.children.length - 1; c >= 0; --c) {
 			var geometry = this.children[c].geometry;
 			var array = geometry.attributes.position.array;
@@ -102,10 +110,6 @@ function Ribbon(renderer) {
 
 	this.setAccelerationMagnitude = function (magnitude) {
 		accelerationMagnitude = magnitude;
-	}
-
-	this.setTarget = function (target_) {
-		targetRaw = target_;
 	}
 
 	this.setColor = function (color_) {

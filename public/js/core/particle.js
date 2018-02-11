@@ -1,4 +1,4 @@
-function Particle (renderer) {
+function Particle(renderer, targetPosition) {
 
 	THREE.Object3D.call(this);
 	this.frustumCulled = false;
@@ -75,6 +75,7 @@ function Particle (renderer) {
 	this.updateBuffers();
 
 	this.update = function(elapsed) {
+		uniforms.target.value = [targetPosition.x, targetPosition.y, targetPosition.z];
 		uniforms.time.value = elapsed;
 		this.updateBuffers();
 	}
@@ -92,10 +93,6 @@ function Particle (renderer) {
 
 	this.setPressure = function() {
 
-	}
-
-	this.setTarget = function(target) {
-		uniforms.target.value = target;
 	}
 
 	this.setColor = function (color_) {

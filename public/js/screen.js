@@ -48,6 +48,8 @@ window.onload = function () {
 		{ name:'spray', url:'meshes/spray.obj' },
 	], setup);
 
+	var totalAngleRotate = new THREE.Quaternion();
+
 	function setup () {
 
 		var geometry = meshes['spray'].children[0].geometry;
@@ -65,7 +67,7 @@ window.onload = function () {
 			var spray = new THREE.Mesh(geometry, material);
 			scene.add(spray);
 
-			var particle = new Particle(renderer);
+			var particle = new Particle(renderer, spray.position);
 			particle.update(elapsed);
 			scene.add(particle);
 
@@ -73,11 +75,9 @@ window.onload = function () {
 				spray: spray,
 				particle: particle,
 				ribbons: [],
-				accelerationRaw: [0,0,0],
-				orientationRaw: [0,0,0],
-				acceleration: [0,0,0],
-				orientation: [0,0,0],
-				position: [0,0,0],
+				rawAcceleration: new THREE.Vector3(),
+				acceleration: new THREE.Vector3(),
+				quaternion: new THREE.Quaternion(),
 				spraying: false,
 				pressureRaw: 0,
 				color: [1,1,1],
@@ -107,9 +107,7 @@ window.onload = function () {
 			var client = clients[id];
 			if (!client) return;
 
-			for (var v = 0; v < 3; ++v) {
-				client.accelerationRaw[v] = data[v];
-			}
+			client.rawAcceleration.set(data[0], data[1], data[2]);
 		});
 
 		socket.on('color', function (id, data) {
@@ -121,13 +119,19 @@ window.onload = function () {
 			client.spray.material.uniforms.color.value = client.color;
 		});
 
+		var eulerOrientation = new THREE.Euler();
 		socket.on('orientation', function (id, data) {
 			var client = clients[id];
 			if (!client) return;
 
-			for (var v = 0; v < 3; ++v) {
-				client.orientationRaw[v] = data[v];
-			}
+			eulerOrientation.set(
+				THREE.Math.degToRad(data[1] - 180),
+				THREE.Math.degToRad(- data[0]),
+				-THREE.Math.degToRad(data[2]),
+				'YXZ');
+
+			client.quaternion.setFromEuler(eulerOrientation);
+			client.quaternion.multiply(totalAngleRotate);
 		});
 
 		socket.on('spray-off', function (id) {
@@ -143,8 +147,8 @@ window.onload = function () {
 
 			client.spraying = true;
 
-			var ribbon = new Ribbon(renderer);
-			ribbon.startAt(client.position);
+			var ribbon = new Ribbon(renderer, client.spray.position);
+			ribbon.start();
 			ribbon.setColor(client.color);
 			scene.add(ribbon);
 			client.ribbons.push(ribbon);
@@ -185,44 +189,39 @@ window.onload = function () {
 			controls.setOffsetTheta(delta * .1);
 		}
 
+		var upVector = new THREE.Vector3(0, 1, 0);
+		var angleRotate = new THREE.Quaternion();
+		angleRotate.setFromAxisAngle(upVector, delta * .1);
+
+		totalAngleRotate.multiply(angleRotate);
+
+		var zeroVector = new THREE.Vector3();
 		Object.keys(clients).forEach(function(id) {
 			var client = clients[id];
 
+			client.spray.quaternion.multiply(angleRotate);
+			client.spray.quaternion.slerp(client.quaternion, .5);
+			client.acceleration.lerp(client.rawAcceleration, .5);
+			client.spray.translateOnAxis(client.acceleration, .05);
 
-			for (var v = 0; v < 3; ++v) {
-				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], accelerationDamping);
-				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], orientationDamping);
-				client.position[v] += accelerationSpeed * client.acceleration[v] * delta;
-				if (client.spraying == false) {
-					client.position[v] = lerp(client.position[v], 0., resetDamping);
-				}
-				client.spray.position.set(client.position[0], client.position[1], client.position[2]);
+			if (client.spraying == false) {
+				client.spray.position.lerp(zeroVector, 1 * delta);
 			}
-
-
-			// var PI2 = Math.PI * 2.;
-			client.spray.rotation.set(
-				THREE.Math.degToRad(client.orientation[1]),
-				THREE.Math.degToRad(client.orientation[0]),
-				-THREE.Math.degToRad(client.orientation[2]),
-				'YXZ');
 
 			client.pressure = lerp(client.pressure, client.pressureRaw, .5);
 
 			if (client.pressure > 0.01 && client.spraying && client.ribbons.length > 0) {
 				var ribbon = client.ribbons[client.ribbons.length-1];
 				ribbon.update(elapsed);
-				ribbon.setTarget(client.position);
 				var magnitude = distance3(client.acceleration[0], client.acceleration[1], client.acceleration[2], 0, 0, 0);
 				ribbon.setAccelerationMagnitude(magnitude);
 			}
-			
+
 			client.particle.update(elapsed);
 			client.particle.setSpraying(client.spraying);
-			
+
 			if (client.spraying) {
 				client.particle.spray();
-				client.particle.setTarget(client.position);
 			}
 		});
 
