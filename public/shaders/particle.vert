@@ -11,7 +11,7 @@ void main () {
 	vec3 velocity = texture2D(velocityTexture, indexMap).xyz;
 	vVelocity = velocity;
 	vColor = normalize(velocity) * .5 + .5;
-	float size = .1 + .1 * rand(indexMap);
+	float size = .2 + .2 * rand(indexMap);
 	size *= smoothstep(.0,.1,pos.w);
 	size *= 1.-smoothstep(.9,1.,pos.w);
 	// velocity = normalize(velocity);

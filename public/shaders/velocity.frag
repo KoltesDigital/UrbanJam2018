@@ -14,6 +14,7 @@ void main () {
 
 	vec3 seed = texture2D(seedTexture, vUv).xyz;
   seed += position;
+  seed *= .2;
   seed.xz *= rot(time*.09);
   seed.xy *= rot(time*.06);
   seed.yz *= rot(time*.03);

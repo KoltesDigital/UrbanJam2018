@@ -72,6 +72,12 @@ function getPoints (count) {
     return points;
 }
 
+function getValues (count) {
+    var values = [];
+    for (var i = 0; i < count; ++i) values.push(0);
+    return values;
+}
+
 function getRandomPoints (count) {
     var points = [];
     for (var i = 0; i < count * 3; ++i) points.push(randomRange(-1,1));

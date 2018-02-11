@@ -1,13 +1,15 @@
 uniform vec2 resolution;
 attribute vec2 indexMap, anchor;
 attribute vec3 previousPosition;
+attribute float accelerationMagnitude;
 varying vec3 vDirection, vView;
 
 void main () {
 	float size = .1;
 
 	vDirection = previousPosition-position;
-	vView = cameraPosition-position;
+	// vView = cameraPosition-position;
+	vView = -position;
 
 	// vec4 pos = modelMatrix * vec4(position, 1.);
 	// // lookAt(pos.xyz, vec3(0), anchor * .5);
@@ -27,7 +29,8 @@ void main () {
 	// gl_Position = screenPosition;
 
 	vec4 pos = modelMatrix * vec4(position, 1.);
-	lookAtUp(pos.xyz, vec3(0), anchor);
+	float magnitude = clamp(accelerationMagnitude / 15., 0., 1.);
+	lookAtUp(pos.xyz, vec3(0), anchor * (.5+.5*magnitude));
 	gl_Position = projectionMatrix * viewMatrix * pos;
 
 	// vec3 pos = position;

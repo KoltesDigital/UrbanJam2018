@@ -19,15 +19,16 @@ window.onload = function () {
 
 	var scene = new THREE.Scene();
 	var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
-	camera.position.z = 30;
+	camera.position.z = 60;
 	var controls = new THREE.OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
-	controls.dampingFactor = 0.25;
+	controls.dampingFactor = 0.5;
 	controls.rotateSpeed = 0.25;
 	var accelerationDamping = .9;
 	var orientationDamping = .1;
-	var resetDamping = .01;
-	var accelerationSpeed = 5.;
+	var resetDamping = .1;
+	var accelerationSpeed = 2.;
+	var lookAtTarget = new THREE.Vector3();
 
 	load([
 		{ name:'particleBrush', url:'images/spray_point.jpg' },
@@ -66,7 +67,7 @@ window.onload = function () {
 
 			var particle = new Particle(renderer);
 			particle.update(elapsed);
-			// scene.add(particle);
+			scene.add(particle);
 
 			var client = {
 				spray: spray,
@@ -78,7 +79,9 @@ window.onload = function () {
 				orientation: [0,0,0],
 				position: [0,0,0],
 				spraying: false,
-				euler: new THREE.Euler(),
+				pressureRaw: 0,
+				color: [1,1,1],
+				pressure: 0,
 			};
 			clients[id] = client;
 		});
@@ -151,6 +154,7 @@ window.onload = function () {
 			var client = clients[id];
 			if (!client) return;
 
+			client.pressureRaw = pressure;
 		});
 
 		document.body.style.cursor = 'none';
@@ -177,6 +181,9 @@ window.onload = function () {
 		var lastMouseY = (1.-Mouse.lastY/window.innerHeight)*2.-1.;
 
 		controls.update();
+		if (Mouse.down == false) {
+			controls.setOffsetTheta(delta * .1);
+		}
 
 		Object.keys(clients).forEach(function(id) {
 			var client = clients[id];
@@ -186,7 +193,9 @@ window.onload = function () {
 				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], accelerationDamping);
 				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], orientationDamping);
 				client.position[v] += accelerationSpeed * client.acceleration[v] * delta;
-				client.position[v] = lerp(client.position[v], 0., resetDamping);
+				if (client.spraying == false) {
+					client.position[v] = lerp(client.position[v], 0., resetDamping);
+				}
 				client.spray.position.set(client.position[0], client.position[1], client.position[2]);
 			}
 
@@ -198,18 +207,23 @@ window.onload = function () {
 				-THREE.Math.degToRad(client.orientation[2]),
 				'YXZ');
 
-			if (client.spraying && client.ribbons.length > 0) {
+			client.pressure = lerp(client.pressure, client.pressureRaw, .5);
+
+			if (client.pressure > 0.01 && client.spraying && client.ribbons.length > 0) {
 				var ribbon = client.ribbons[client.ribbons.length-1];
 				ribbon.update(elapsed);
 				ribbon.setTarget(client.position);
+				var magnitude = distance3(client.acceleration[0], client.acceleration[1], client.acceleration[2], 0, 0, 0);
+				ribbon.setAccelerationMagnitude(magnitude);
 			}
 			
-			// client.particle.update(elapsed);
+			client.particle.update(elapsed);
+			client.particle.setSpraying(client.spraying);
 			
-			// if (client.spraying) {
-			// 	client.particle.spray();
-			// 	client.particle.setTarget(client.position);
-			// }
+			if (client.spraying) {
+				client.particle.spray();
+				client.particle.setTarget(client.position);
+			}
 		});
 
 		renderer.render( scene, camera );

@@ -1,10 +1,11 @@
 function Particle (renderer) {
 
 	THREE.Object3D.call(this);
+	this.frustumCulled = false;
 
 	var color = [1,1,1];
 
-	var dimension = 64;
+	var dimension = 32;
 	var uniforms = {
 		color: { value: color },
 		positionTexture: { value: createDataTexture(getRandomPoints(dimension*dimension), 3) },
@@ -15,18 +16,22 @@ function Particle (renderer) {
 		target: { value: [0,0,0] },
 		time: { value: 0 },
 		reset: { value: 1 },
+		spraying: { value: 0 },
 	};
 
-	var framerate = 120;
+	var framerate = 60;
 	var lastframe = 0;
 
 	createGeometry(randomPositionAttribute(dimension*dimension)).forEach(geometry => {
-		this.add(new THREE.Mesh(geometry, new THREE.ShaderMaterial({
+		var material = new THREE.ShaderMaterial({
 			vertexShader: shaders['header']+shaders['particle.vert'],
 			fragmentShader: shaders['header']+shaders['particle.frag'],
 			uniforms: uniforms,
 			side: THREE.DoubleSide,
-		})))
+		});
+		var mesh = new THREE.Mesh(geometry, material);
+		mesh.frustumCulled = false;
+		this.add(mesh);
 	})
 
 	var bufferPosition = new FrameBuffer({
@@ -47,22 +52,22 @@ function Particle (renderer) {
 		}),
 	});
 
-	var bufferTarget = new FrameBuffer({
-		render: renderer, width: dimension, height: dimension,
-		material: new THREE.ShaderMaterial({
-			vertexShader: shaders['header']+shaders['buffer.vert'],
-			fragmentShader: shaders['header']+shaders['target.frag'],
-			uniforms: uniforms,
-		}),
-	});
+	// var bufferTarget = new FrameBuffer({
+	// 	render: renderer, width: dimension, height: dimension,
+	// 	material: new THREE.ShaderMaterial({
+	// 		vertexShader: shaders['header']+shaders['buffer.vert'],
+	// 		fragmentShader: shaders['header']+shaders['target.frag'],
+	// 		uniforms: uniforms,
+	// 	}),
+	// });
 
 	this.updateBuffers = function() {
 		uniforms.positionTexture.value = bufferPosition.getTexture();
 		uniforms.velocityTexture.value = bufferVelocity.getTexture();
-		uniforms.targetTexture.value = bufferTarget.getTexture();
+		// uniforms.targetTexture.value = bufferTarget.getTexture();
 		bufferPosition.update();
 		bufferVelocity.update();
-		bufferTarget.update();
+		// bufferTarget.update();
 	}
 
 	this.updateBuffers();
@@ -72,6 +77,10 @@ function Particle (renderer) {
 	this.update = function(elapsed) {
 		uniforms.time.value = elapsed;
 		this.updateBuffers();
+	}
+
+	this.setSpraying = function(spraying) {
+		uniforms.spraying.value = spraying;
 	}
 
 	this.spray = function() {

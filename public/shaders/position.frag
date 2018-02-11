@@ -1,7 +1,7 @@
 
 uniform sampler2D positionTexture, velocityTexture, targetTexture;
 uniform vec3 target;
-uniform float time, dimension, spawnIndex, reset;
+uniform float time, dimension, spawnIndex, reset, spraying;
 varying vec2 vUv;
 
 void main () {
@@ -14,10 +14,12 @@ void main () {
 	float fade = 1.-smoothstep(0., 30., length(index-spawnIndex));
 	fade *= step(index, spawnIndex);
 	position.xyz = mix(position.xyz, target, fade);
-	position.w += .01 + .01 * salt;
-	position.xyz = mix(position.xyz, targetBuffer.xyz, step(1., position.w));
-	position.w = mod(position.w, 1.);
+	position.w = mix(position.w * .95, 1., fade * spraying);
+	// position.w += .01 + .01 * salt;
+	// position.xyz = mix(position.xyz, targetBuffer.xyz, step(1., position.w));
+	// position.w = mod(position.w, 1.);
+	position.w = clamp(position.w, 0., 1.);
 	position.w = mix(position.w, 0., reset);
-	fade = 1.-smoothstep(.0, .1, position.w);
-	gl_FragColor = position + velocity * (.03 + .03 * salt + .5 * fade);
+	fade = 1.-smoothstep(.9, 1., position.w);
+	gl_FragColor = position + velocity * (.01 + .01 * salt + .5 * fade);
 }

@@ -1,13 +1,16 @@
 function Ribbon(renderer) {
 
 	THREE.Object3D.call(this);
+	this.frustumCulled = false;
 	
-	var segments = 1000;
+	var segments = 200;
 	var segmentLength = .1;
 
 	var target = [0,0,0];
 	var targetRaw = [0,0,0];
 	var targetDamping = .5;
+
+	var accelerationMagnitude = 0;
 
 	var uniforms = {
 		color: { value: [1,1,1] },
@@ -20,14 +23,20 @@ function Ribbon(renderer) {
 		array: [getPoints(attributes.position.array.length/3)],
 		itemSize: 3,
 	}
+	attributes.accelerationMagnitude = {
+		array: [getValues(attributes.position.array.length/3)],
+		itemSize: 1,
+	}
 
 	createGeometry(attributes, [1,segments]).forEach(geometry => {
-		this.add(new THREE.Mesh(geometry, new THREE.ShaderMaterial({
+		var mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
 			vertexShader: shaders['header'] + shaders['ribbon.vert'],
 			fragmentShader: shaders['header'] + shaders['ribbon.frag'],
 			uniforms: uniforms,
 			side: THREE.DoubleSide,
-		})))
+		}));
+		mesh.frustumCulled = false;
+		this.add(mesh);
 	})
 
 	this.update = function (elapsed) {
@@ -39,23 +48,28 @@ function Ribbon(renderer) {
 		for (var c = this.children.length - 1; c >= 0; --c) {
 			var geometry = this.children[c].geometry;
 			var array = geometry.attributes.position.array;
+			var arrayMagnitude = geometry.attributes.accelerationMagnitude.array;
+
 			for (var p = 0; p < 2; ++p) {
 				for (var v = 0; v < 3; ++v) {
 					array[p*3 + v] = target[v];
 				}
+				arrayMagnitude[p] = lerp(arrayMagnitude[p], accelerationMagnitude, .5);
 			}
 
 			var index2nd = 2*3;
 			var dist = distance3(target[0],target[1],target[2],array[index2nd],array[index2nd+1],array[index2nd+2]);
 			if (dist > segmentLength) {
-				for (var i = segments-1; i > 0; --i) {
+				for (var i = segments; i > 0; --i) {
 					for (var p = 0; p < 2; ++p) {
 						for (var v = 0; v < 3; ++v) {
 							array[i*3*2 + p*3 + v] = array[(i-1)*3*2 + p*3 + v];
 						}
+						arrayMagnitude[i*2 + p] = arrayMagnitude[(i-1)*2 + p];
 					}
 				}
 				geometry.attributes.position.needsUpdate = true;
+				geometry.attributes.accelerationMagnitude.needsUpdate = true;
 			}
 
 			var arrayPrev = geometry.attributes.previousPosition.array;
@@ -67,6 +81,8 @@ function Ribbon(renderer) {
 				}
 			}
 			geometry.attributes.previousPosition.needsUpdate = true;
+
+
 		}
 	}
 
@@ -82,6 +98,10 @@ function Ribbon(renderer) {
 			}
 		}
 		geometry.attributes.position.needsUpdate = true;
+	}
+
+	this.setAccelerationMagnitude = function (magnitude) {
+		accelerationMagnitude = magnitude;
 	}
 
 	this.setTarget = function (target_) {

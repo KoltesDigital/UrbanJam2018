@@ -85,6 +85,14 @@ THREE.OrbitControls = function ( object, domElement ) {
 	// public methods
 	//
 
+	var offsetTheta = 0;
+
+	this.setOffsetTheta = function (theta) {
+
+		offsetTheta = theta;
+
+	};
+
 	this.getPolarAngle = function () {
 
 		return spherical.phi;
@@ -144,6 +152,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 			spherical.theta += sphericalDelta.theta;
 			spherical.phi += sphericalDelta.phi;
+			spherical.theta += offsetTheta;
 
 			// restrict theta to be between desired limits
 			spherical.theta = Math.max( scope.minAzimuthAngle, Math.min( scope.maxAzimuthAngle, spherical.theta ) );
