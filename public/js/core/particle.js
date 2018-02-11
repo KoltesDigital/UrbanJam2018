@@ -9,10 +9,12 @@ function Particle (renderer) {
 		color: { value: color },
 		positionTexture: { value: createDataTexture(getRandomPoints(dimension*dimension), 3) },
 		velocityTexture: { value: createDataTexture(getPoints(dimension*dimension), 3) },
+		targetTexture: { value: createDataTexture(getPoints(dimension*dimension), 3) },
 		dimension: { value: dimension },
 		spawnIndex: { value: 0 },
 		target: { value: [0,0,0] },
 		time: { value: 0 },
+		reset: { value: 1 },
 	};
 
 	var framerate = 120;
@@ -45,12 +47,31 @@ function Particle (renderer) {
 		}),
 	});
 
-	this.update = function(elapsed) {
-		uniforms.time.value = elapsed;
+	var bufferTarget = new FrameBuffer({
+		render: renderer, width: dimension, height: dimension,
+		material: new THREE.ShaderMaterial({
+			vertexShader: shaders['header']+shaders['buffer.vert'],
+			fragmentShader: shaders['header']+shaders['target.frag'],
+			uniforms: uniforms,
+		}),
+	});
+
+	this.updateBuffers = function() {
 		uniforms.positionTexture.value = bufferPosition.getTexture();
 		uniforms.velocityTexture.value = bufferVelocity.getTexture();
+		uniforms.targetTexture.value = bufferTarget.getTexture();
 		bufferPosition.update();
 		bufferVelocity.update();
+		bufferTarget.update();
+	}
+
+	this.updateBuffers();
+	uniforms.reset.value = 0;
+	this.updateBuffers();
+
+	this.update = function(elapsed) {
+		uniforms.time.value = elapsed;
+		this.updateBuffers();
 	}
 
 	this.spray = function() {

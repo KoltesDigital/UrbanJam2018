@@ -1,6 +1,5 @@
 
-uniform sampler2D positionTexture, velocityTexture, seedTexture;
-uniform vec3 target;
+uniform sampler2D positionTexture, velocityTexture, seedTexture, targetTexture;
 uniform float time;
 varying vec2 vUv;
 
@@ -8,6 +7,7 @@ void main () {
 	float e = .00001;
 	vec3 position = texture2D(positionTexture, vUv).xyz;
 	vec3 velocity = texture2D(velocityTexture, vUv).xyz;
+	vec3 target = texture2D(targetTexture, vUv).xyz;
 
 	velocity *= .99;
 	vec3 offset = vec3(0);
@@ -21,7 +21,7 @@ void main () {
   offset.y += (noiseIQ(seed+vec3(123.3210,51.96,123.4398))*2.-1.);
   offset.z += (noiseIQ(seed+vec3(54.,459.54,648.549))*2.-1.);
 
-	// offset += normalize(e+target-position) * clamp(length(target-position), 0., 1.);
+	// offset += normalize(e+target-position) * clamp(length(target-position)*10., 0., 1.);
 
 	velocity = mix(velocity, offset, .01);
 

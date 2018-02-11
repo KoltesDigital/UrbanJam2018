@@ -2,7 +2,7 @@ function Ribbon(renderer) {
 
 	THREE.Object3D.call(this);
 	
-	var segments = 100;
+	var segments = 1000;
 	var segmentLength = .1;
 
 	var target = [0,0,0];

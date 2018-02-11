@@ -19,27 +19,28 @@ window.onload = function () {
 
 	var scene = new THREE.Scene();
 	var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
-	camera.position.z = 5;
+	camera.position.z = 30;
 	var controls = new THREE.OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.25;
 	controls.rotateSpeed = 0.25;
-	var accelerationDamping = .5;
+	var accelerationDamping = .9;
 	var orientationDamping = .1;
 	var resetDamping = .01;
-	var dataSpeed = 1.;
+	var accelerationSpeed = 5.;
 
 	load([
-		// { name:'cursor', url:'images/cursor.png' },
+		{ name:'particleBrush', url:'images/spray_point.jpg' },
 	],[
 		{ name:'header', url:'shaders/header.glsl' },
 		{ name:'buffer.vert', url:'shaders/buffer.vert' },
 		{ name:'particle.vert', url:'shaders/particle.vert' },
 		{ name:'particle.frag', url:'shaders/particle.frag' },
 		{ name:'position.frag', url:'shaders/position.frag' },
+		{ name:'velocity.frag', url:'shaders/velocity.frag' },
+		{ name:'target.frag', url:'shaders/target.frag' },
 		{ name:'ribbon.vert', url:'shaders/ribbon.vert' },
 		{ name:'ribbon.frag', url:'shaders/ribbon.frag' },
-		{ name:'velocity.frag', url:'shaders/velocity.frag' },
 		{ name:'spray.vert', url:'shaders/spray.vert' },
 		{ name:'spray.frag', url:'shaders/spray.frag' },
 	],[
@@ -65,7 +66,7 @@ window.onload = function () {
 
 			var particle = new Particle(renderer);
 			particle.update(elapsed);
-			scene.add(particle);
+			// scene.add(particle);
 
 			var client = {
 				spray: spray,
@@ -184,7 +185,7 @@ window.onload = function () {
 			for (var v = 0; v < 3; ++v) {
 				client.acceleration[v] = lerp(client.acceleration[v], client.accelerationRaw[v], accelerationDamping);
 				client.orientation[v] = lerp(client.orientation[v], client.orientationRaw[v], orientationDamping);
-				client.position[v] += dataSpeed * client.acceleration[v] * delta;
+				client.position[v] += accelerationSpeed * client.acceleration[v] * delta;
 				client.position[v] = lerp(client.position[v], 0., resetDamping);
 				client.spray.position.set(client.position[0], client.position[1], client.position[2]);
 			}
@@ -203,12 +204,12 @@ window.onload = function () {
 				ribbon.setTarget(client.position);
 			}
 			
-			client.particle.update(elapsed);
+			// client.particle.update(elapsed);
 			
-			if (client.spraying) {
-				client.particle.spray();
-				client.particle.setTarget(client.position);
-			}
+			// if (client.spraying) {
+			// 	client.particle.spray();
+			// 	client.particle.setTarget(client.position);
+			// }
 		});
 
 		renderer.render( scene, camera );
